@@ -4,7 +4,7 @@ import { IApplication } from './IApplication';
 import { ILogger } from './ILogger';
 import { IPlugin } from './IPlugin';
 import { IPluginLoader } from './IPluginLoader';
-import { IPluginDescription } from './IPluginDescription';
+import { IPluginDescription, LoadingTime } from './IPluginDescription';
 
 export {
   Plugin,
@@ -13,5 +13,6 @@ export {
   ILogger,
   IPlugin,
   IPluginLoader,
-  IPluginDescription
+  IPluginDescription,
+  LoadingTime
 };
