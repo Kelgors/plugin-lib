@@ -144,6 +144,16 @@ export class PluginLoader implements IPluginLoader {
     }
   }
 
+  async disablePlugins(): Promise<void> {
+    for (const [ pluginName, plugin ] of this.__plugins__) {
+      try {
+        await this.disablePlugin(plugin);
+      } catch (ex) {
+        this.getApplication().getLogger().error(ex);
+      }
+    }
+  }
+
   enablePlugin(plugin: Plugin): Promise<void> {
     if (plugin.isEnabled()) return Promise.resolve();
     plugin.getLogger().info(`Enabling ${plugin.getName()}`);

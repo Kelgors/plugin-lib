@@ -1,4 +1,7 @@
 import { ILogger } from './ILogger';
+/**
+ * Represents the application which use pluginloader
+ */
 export interface IApplication {
   getName(): string;
   getLogger(): ILogger;

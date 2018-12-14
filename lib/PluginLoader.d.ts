@@ -12,6 +12,7 @@ export declare class PluginLoader implements IPluginLoader {
     loadPlugins(path: string): Promise<Plugin[]>;
     loadPlugin(path: string): Promise<void>;
     enablePlugins(): Promise<void>;
+    disablePlugins(): Promise<void>;
     enablePlugin(plugin: Plugin): Promise<void>;
     disablePlugin(plugin: Plugin): Promise<void>;
 }
