@@ -1,11 +1,12 @@
 import { IPluginLoader } from './IPluginLoader';
 import { Plugin } from './Plugin';
-import { IPluginDescription } from './IPluginDescription';
+import { IPluginDescription, LoadingTime } from './IPluginDescription';
 import { IApplication } from './IApplication';
 
 import * as assert from 'assert';
 import * as Path from 'path';
 import * as fsRoot from 'fs';
+import { ILogger } from 'src';
 const fs = fsRoot.promises;
 
 export class PluginLoader implements IPluginLoader {
@@ -51,6 +52,7 @@ export class PluginLoader implements IPluginLoader {
     const pluginDependencies: Map<string, string[]> = new Map();
     const loadedPlugins: string[] = [];
     const paths: string[] = await fs.readdir(path);
+    const logger: ILogger = this.getApplication().getLogger();
 
     for (const index in paths) {
       try {
@@ -64,7 +66,7 @@ export class PluginLoader implements IPluginLoader {
           pluginDependencies.set(description.name, (description['plugin-lib$depends'] || []).slice(0));
         }
       } catch (ex) {
-        this.getApplication().getLogger().error(ex);
+        logger.error(ex);
       }
     }
 
@@ -84,11 +86,11 @@ export class PluginLoader implements IPluginLoader {
             // dependency isnt already loaded
             if (plugins.indexOf(depName) === -1) {
               // dependency is not in the plugin folder
-              this.getApplication().getLogger().error(new Error(`DependencyResolutionException: Missing plugin ${depName} required by ${pluginName}`));
+              logger.error(new Error(`DependencyResolutionException: Missing plugin ${depName} required by ${pluginName}`));
               plugins.splice(plugins.indexOf(pluginName), 1);
             }
             missingDependencies = true;
-            this.getApplication().getLogger().trace(`Dependency ${depName} not yet loaded for plugin ${pluginName}`);
+            logger.trace(`Dependency ${depName} not yet loaded for plugin ${pluginName}`);
             break;
           }
         }
@@ -99,7 +101,7 @@ export class PluginLoader implements IPluginLoader {
 
         // all good, we can load it
         try {
-          this.getApplication().getLogger().trace(`All dependencies loaded for plugin ${pluginName}`);
+          logger.trace(`All dependencies loaded for plugin ${pluginName}`);
           plugins.splice(plugins.indexOf(pluginName), 1);
 
           const pluginFolderPath: string = pluginFolders.get(pluginName);
@@ -107,8 +109,8 @@ export class PluginLoader implements IPluginLoader {
 
           loadedPlugins.push(pluginName);
         } catch (ex) {
-          this.getApplication().getLogger().error(`Could not load ${pluginName}`);
-          this.getApplication().getLogger().error(ex);
+          logger.error(`Could not load ${pluginName}`);
+          logger.error(ex);
         }
 
       }
@@ -134,9 +136,11 @@ export class PluginLoader implements IPluginLoader {
     plugin.getLogger().info(`${description.name} loaded`);
   }
 
-  async enablePlugins(): Promise<void> {
+  async enablePlugins(loadingTime: LoadingTime): Promise<void> {
     for (const [ pluginName, plugin ] of this.__plugins__) {
       try {
+        const pluginLoadingTime = plugin.getDescription()['plugin-lib$load'] || LoadingTime.STARTUP;
+        if (pluginLoadingTime != loadingTime) continue;
         await this.enablePlugin(plugin);
       } catch (ex) {
         this.getApplication().getLogger().error(ex);
@@ -144,9 +148,11 @@ export class PluginLoader implements IPluginLoader {
     }
   }
 
-  async disablePlugins(): Promise<void> {
+  async disablePlugins(loadingTime: LoadingTime): Promise<void> {
     for (const [ pluginName, plugin ] of this.__plugins__) {
       try {
+        const pluginLoadingTime = plugin.getDescription()['plugin-lib$load'] || LoadingTime.STARTUP;
+        if (pluginLoadingTime != loadingTime) continue;
         await this.disablePlugin(plugin);
       } catch (ex) {
         this.getApplication().getLogger().error(ex);
